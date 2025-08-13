@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "angelone-mcp"
+version = "0.1.0"
+description = "FastMCP server exposing Angel One Smart API tools"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [{ name = "Win" }]
+license = { text = "MIT" }
+keywords = ["mcp", "fastmcp", "angelone", "smartapi"]
+dependencies = [
+  "attrs",
+  "autobahn",
+  "automat",
+  "certifi",
+  "cffi",
+  "charset-normalizer",
+  "constantly",
+  "cryptography",
+  "hyperlink",
+  "idna",
+  "incremental",
+  "isodate",
+  "logzero",
+  "pycparser",
+  "pyotp",
+  "pyparsing",
+  "python-dateutil",
+  "pytz",
+  "rdflib",
+  "rdflib-jsonld",
+  "requests",
+  "simplejson",
+  "six",
+  "smartapi-python",
+  "twisted",
+  "txaio",
+  "typing-extensions",
+  "urllib3",
+  "websocket-client",
+  "zope-interface",
+  "fastmcp",
+  "python-dotenv",
+  "fastapi>=0.116.1",
+]
+
+[project.urls]
+Homepage = "https://example.com"
+
+[project.scripts]
+angelone-mcp = "angelone_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/angelone_mcp"]
+
+
+
+

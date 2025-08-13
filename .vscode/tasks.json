@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "uv: sync",
+      "type": "shell",
+      "command": "uv sync",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH": "/Users/Win/.local/bin:${env:PATH}"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "run: server",
+      "type": "shell",
+      "command": "uv run python ${workspaceFolder}/src/angelone_mcp/server.py",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH": "/Users/Win/.local/bin:${env:PATH}",
+          "PYTHONPATH": "${workspaceFolder}/src",
+          "FASTMCP_HOST": "127.0.0.1",
+          "FASTMCP_PATH": "/mcp/"
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}
+
+

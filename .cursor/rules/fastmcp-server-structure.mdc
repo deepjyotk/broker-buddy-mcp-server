@@ -1,0 +1,23 @@
+---
+description: Standard structure for a FastMCP server and tools.
+alwaysApply: false
+globs:
+    - src/**/server.py
+    - src/**/tools/**/*.py
+    - src/**/mcp_*.py
+---
+Project shape:
+- Keep a single entry-point `server.py` that initializes FastMCP, registers tools, and starts.
+- Tools live in `src/<pkg>/tools/` and expose pure functions; side effects only in tool wrappers.
+- Split tool logic (pure) from transport (MCP/JSON-RPC) and config (env parsing).
+
+Authoring tools:
+- Every tool must include: `name`, `description`, `input schema` (pydantic or TypedDict), `output schema`.
+- Validate inputs at the edge; return structured, typed results (no raw strings unless explicitly asked).
+- Idempotence where possible; add `dry_run` flags for mutating tools.
+- Add `examples` in the tool docstring for prompt grounding.
+
+Server behavior:
+- Register healthcheck (`tool:health`) that returns version, git SHA, and uptime.
+- Expose `@tool` functions with explicit timeouts and reasonable error messages.
+- Keep startup fast; lazy-import heavy deps inside tool bodies.

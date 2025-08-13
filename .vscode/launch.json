@@ -1,0 +1,54 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Debug MCP server (program)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/angelone_mcp/server.py",
+      "preLaunchTask": "uv: sync",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "FASTMCP_HOST": "127.0.0.1",
+        "FASTMCP_PATH": "/mcp/"
+      },
+      "justMyCode": true,
+      "subProcess": true
+    },
+    {
+      "name": "Python: Debug MCP server (module)",
+      "type": "python",
+      "request": "launch",
+      "module": "angelone_mcp.server",
+      "preLaunchTask": "uv: sync",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "FASTMCP_HOST": "127.0.0.1",
+        "FASTMCP_PATH": "/mcp/"
+      },
+      "justMyCode": true,
+      "subProcess": true
+    },
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "justMyCode": true
+    }
+  ]
+}
+
+

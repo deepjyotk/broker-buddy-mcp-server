@@ -1,0 +1,20 @@
+---
+description: Enforce Python style, docstrings, and strong typing across src/.
+alwaysApply: false
+---
+Goals:
+- Prefer Python ≥3.11 syntax (match/case, typing.NamedTuple | dataclass slots where helpful).
+- Type hints everywhere (params, returns, attrs). No `Any` unless justified in a comment.
+- Docstrings: Google style. Include Args, Returns, Raises.
+- Avoid cyclic imports; prefer dependency inversion.
+- Public API: keep `__all__` explicit for packages.
+
+Conventions:
+- Ruff + Black: format before commit; keep lines ≤ 100; f-strings only.
+- Use pathlib.Path over os.path for paths.
+- No bare exceptions; always catch the narrowest exception.
+- Prefer dataclasses for simple models; pydantic only when validation is needed.
+
+When editing code:
+- Add `typing.assert_never()` in exhaustive match branches.
+- If a TODO spans more than 1 day of work, add a GitHub issue link in the comment.
