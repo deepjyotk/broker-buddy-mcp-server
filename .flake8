@@ -1,0 +1,4 @@
+[flake8]
+exclude = SmartApi, test, .venv, __pycache__, kitchen-sink
+
+max-line-length = 88

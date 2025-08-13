@@ -1,0 +1,34 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: ./.venv/bin/pytest -q --ignore=SmartApi
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: flake8
+        name: flake8
+        entry: ./.venv/bin/flake8
+        language: system
+        types: [python]
+        exclude: ^(SmartApi/|test/|\.venv/|__pycache__/|kitchen-sink/)
+
+      - id: black
+        name: black
+        entry: ./.venv/bin/black --check --diff
+        language: system
+        types: [python]
+
+      - id: isort
+        name: isort
+        entry: ./.venv/bin/isort --check-only --diff
+        language: system
+        types: [python]
+
+      - id: autoflake
+        name: autoflake
+        entry: ./.venv/bin/autoflake --check --recursive
+        language: system
+        types: [python]

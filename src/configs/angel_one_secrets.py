@@ -1,14 +1,15 @@
 import sys
-from pydantic import Field, ValidationError
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from fastmcp.exceptions import ToolError
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationError
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AngelOneSettings(BaseSettings):
     """Loads ANGELONE_* from env/.env"""
+
     model_config = SettingsConfigDict(
-        env_prefix="ANGELONE_",     # <-- IMPORTANT
+        env_prefix="ANGELONE_",  # <-- IMPORTANT
         env_file=".env",
         env_file_encoding="utf-8",
         # Use case-insensitive matching so typical UPPERCASE env vars work
@@ -33,12 +34,14 @@ def get_secret(user_id: str) -> UserSecret:
         settings = AngelOneSettings()  # Reads ANGELONE_* from env/.env
         return UserSecret(share_credentials=settings)
     except ValidationError as e:
-        missing = [err["loc"][0] for err in e.errors() if err["type"].startswith("missing")]
-        details = f"Missing: {', '.join(missing)}" if missing else "Invalid configuration."
-        raise ToolError(
-            code="invalid_config",
-            message=f"Angel One credentials not configured correctly. {details}"
+        missing = [
+            err["loc"][0] for err in e.errors() if err["type"].startswith("missing")
+        ]
+        details = (
+            f"Missing: {', '.join(missing)}" if missing else "Invalid configuration."
         )
+        message = "Angel One credentials not configured correctly. " f"{details}"
+        raise ToolError(code="invalid_config", message=message)
 
 
 def main():

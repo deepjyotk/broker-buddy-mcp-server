@@ -1,63 +1,63 @@
 from __future__ import annotations
 
+import logging
 import os
-import threading
 import time
-from typing import Optional
 
 from dotenv import load_dotenv
-
-from fastmcp import FastMCP, Context
-from fastmcp.server.middleware import Middleware, MiddlewareContext
-
+from fastmcp import Context, FastMCP
+from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
+from fastmcp.server.middleware import Middleware, MiddlewareContext
 
 from dtos.auth_headers_dto import AuthHeadersDto
 from utils.const import AuthHeadersConstants
-import logging
-from fastmcp.exceptions import ToolError
-
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+
 class CustomMiddleware(Middleware):
     """
-    Injects the user_id into the per-request FastMCP context state so tools can read it.
+    Injects the user_id into the per-request FastMCP context state so
+    tools can read it.
     """
 
     async def on_message(self, mctx: MiddlewareContext, call_next):
         start_time = time.perf_counter()
-        
+
         try:
             result = await call_next(mctx)
             return result
         finally:
             end_time = time.perf_counter()
-            duration_s = (end_time - start_time)
+            duration_s = end_time - start_time
             duration_ms = duration_s * 1000
-            logger.info(f"[{mctx.type}] {mctx.method} took {duration_s:.3f} s ({duration_ms:.2f} ms)")
-            print(f"[{mctx.type}] {mctx.method} took {duration_s:.3f} s ({duration_ms:.2f} ms)")
-    
+            message = (
+                f"[{mctx.type}] {mctx.method} took {duration_s:.3f} s "
+                f"({duration_ms:.2f} ms)"
+            )
+            logger.info(message)
+            print(message)
+
     async def on_call_tool(self, mctx: MiddlewareContext, call_next):
-        
-        http_headers = get_http_headers()    
+
+        http_headers = get_http_headers()
         try:
             user_id = http_headers.get(AuthHeadersConstants.USER_ID.value)
             scopes = http_headers.get(AuthHeadersConstants.SCOPES.value)
             if not user_id or not scopes:
                 raise ToolError("User ID and scopes are required")
-            
+
             # convert scopes to list
             scopes = scopes.split(",")
 
-        
             auth_dto = AuthHeadersDto(
                 user_id=user_id,
                 scopes=scopes,
             )
-            
+
             if auth_dto:
                 mctx.fastmcp_context.set_state("auth_headers", auth_dto)
             return await call_next(mctx)
@@ -74,9 +74,10 @@ def build_mcp(start_time: float) -> FastMCP:
 
     # Add middleware (instance, not class)
     mcp.add_middleware(CustomMiddleware())
-    
+
     from angelone_mcp.tools.external_tools import register_external_tools
-    from angelone_mcp.tools.portfolio import register_portfolio_tools
+    from angelone_mcp.tools.portfolio_tools import register_portfolio_tools
+
     register_portfolio_tools(mcp)
     register_external_tools(mcp)
 
@@ -89,7 +90,10 @@ def build_mcp(start_time: float) -> FastMCP:
         }
 
     # Optional: prove middleware works
-    @mcp.tool(name="tool:whoami", description="Return the resolved user id from request headers")
+    @mcp.tool(
+        name="tool:whoami",
+        description="Return the resolved user id from request headers",
+    )
     def whoami(ctx: Context) -> dict[str, str | None]:
         return {"user_id": ctx.get_state("user_id")}
 

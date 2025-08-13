@@ -56,6 +56,17 @@ angelone-mcp = "angelone_mcp.server:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/angelone_mcp"]
 
+[dependency-groups]
+dev = [
+    "autoflake>=2.3.1",
+    "black>=25.1.0",
+    "flake8>=7.3.0",
+    "isort>=6.0.1",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.1",
+]
 
 
-
+[tool.isort]
+profile = "black"
+skip = ["SmartApi"]
