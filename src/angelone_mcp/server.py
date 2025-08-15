@@ -5,7 +5,7 @@ import os
 import time
 
 from dotenv import load_dotenv
-from fastmcp import Context, FastMCP
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
@@ -88,14 +88,6 @@ def build_mcp(start_time: float) -> FastMCP:
             "service": "angelone-mcp",
             "uptime_seconds": round(time.time() - start_time, 3),
         }
-
-    # Optional: prove middleware works
-    @mcp.tool(
-        name="tool:whoami",
-        description="Return the resolved user id from request headers",
-    )
-    def whoami(ctx: Context) -> dict[str, str | None]:
-        return {"user_id": ctx.get_state("user_id")}
 
     return mcp
 

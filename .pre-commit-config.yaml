@@ -7,6 +7,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+        exclude: ^(SmartApi/|\.venv/|__pycache__/)
 
       - id: flake8
         name: flake8
@@ -20,15 +21,18 @@ repos:
         entry: ./.venv/bin/black --check --diff
         language: system
         types: [python]
+        exclude: ^(SmartApi/|\.venv/|__pycache__/)
 
       - id: isort
         name: isort
         entry: ./.venv/bin/isort --check-only --diff
         language: system
         types: [python]
+        exclude: ^(SmartApi/|\.venv/|__pycache__/)
 
       - id: autoflake
         name: autoflake
         entry: ./.venv/bin/autoflake --check --recursive
         language: system
         types: [python]
+        exclude: ^(SmartApi/|\.venv/|__pycache__/)

@@ -1,213 +1,183 @@
-# SMARTAPI-PYTHON
+# Angel One MCP Server
 
-SMARTAPI-PYTHON is a Python library for interacting with Angel's Trading platform  ,that is a set of REST-like HTTP APIs that expose many capabilities required to build stock market investment and trading platforms. It lets you execute orders in real time..
+A FastMCP server that provides programmatic access to Angel One's Smart API for portfolio management and stock trading. This server exposes trading tools through the Model Context Protocol (MCP), enabling AI assistants and applications to interact with Angel One's brokerage services for portfolio queries, trade execution, and market news aggregation.
 
+## Features
 
-## Installation
+- **Portfolio Management**: View current holdings and portfolio details
+- **Trade Execution**: Place delivery (CNC) buy orders with market prices
+- **News Aggregation**: Fetch stock news from multiple sources (Google News, Yahoo News, MoneyControl, Economic Times, Business Standard)
+- **Authentication**: Secure user-based authentication with scope-based permissions
+- **Health Monitoring**: Built-in health check endpoint for service monitoring
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install smartapi-python.
+## Prerequisites
+
+- Python 3.13+
+- [uv](https://docs.astral.sh/uv/) package manager
+- Angel One trading account with API access
+- Valid Angel One API credentials (API key, client code, PIN, TOTP secret)
+
+## Setup
+
+### 1. Clone and Install Dependencies
 
 ```bash
-pip install -r requirements_dev.txt       # for downloading the other required packages
+git clone <repository-url>
+cd broker-buddy-mcp-server
+
+# Create virtual environment and install dependencies
+make setup
 ```
 
-Download the following packages
+### 2. Configure Environment Variables
+
+Create a `.env` file in the project root with your Angel One credentials:
+
 ```bash
-pip install pyotp
-pip install logzero
-pip install websocket-client    
+# Angel One API Configuration
+ANGEL_ONE_API_KEY=your_api_key_here
+ANGEL_ONE_CLIENT_CODE=your_client_code_here
+ANGEL_ONE_PIN=your_pin_here
+ANGEL_ONE_TOTP_SECRET=your_totp_secret_here
+
+# Optional: Server Configuration
+FASTMCP_HOST=127.0.0.1
+FASTMCP_PORT=9000
+FASTMCP_PATH=/mcp/
 ```
-For Downloading pycryptodome package
+
+### 3. Run the Server
+
 ```bash
-pip uninstall pycrypto
-pip install pycryptodome    
+# Start the MCP server
+make run
+
+# Or directly with uv
+uv run angelone-mcp
 ```
 
-## Usage
+The server will start on `http://127.0.0.1:9000/mcp/` by default.
 
-```python
-# package import statement
-from SmartApi import SmartConnect #or from SmartApi.smartConnect import SmartConnect
-import pyotp
-from logzero import logger
+## Quick Setup for Cursor IDE
 
-api_key = 'Your Api Key'
-username = 'Your client code'
-pwd = 'Your pin'
-smartApi = SmartConnect(api_key)
-try:
-    token = "Your QR value"
-    totp = pyotp.TOTP(token).now()
-except Exception as e:
-    logger.error("Invalid Token: The provided token is not valid.")
-    raise e
+To quickly test the MCP server in Cursor, create or update your `mcp.json` configuration file:
 
-correlation_id = "abcde"
-data = smartApi.generateSession(username, pwd, totp)
+**Location**: `~/.cursor/mcp.json` (macOS/Linux) or `%APPDATA%\Cursor\User\mcp.json` (Windows)
 
-if data['status'] == False:
-    logger.error(data)
-    
-else:
-    # login api call
-    # logger.info(f"You Credentials: {data}")
-    authToken = data['data']['jwtToken']
-    refreshToken = data['data']['refreshToken']
-    # fetch the feedtoken
-    feedToken = smartApi.getfeedToken()
-    # fetch User Profile
-    res = smartApi.getProfile(refreshToken)
-    smartApi.generateToken(refreshToken)
-    res=res['data']['exchanges']
-
-    #place order
-    try:
-        orderparams = {
-            "variety": "NORMAL",
-            "tradingsymbol": "SBIN-EQ",
-            "symboltoken": "3045",
-            "transactiontype": "BUY",
-            "exchange": "NSE",
-            "ordertype": "LIMIT",
-            "producttype": "INTRADAY",
-            "duration": "DAY",
-            "price": "19500",
-            "squareoff": "0",
-            "stoploss": "0",
-            "quantity": "1"
-            }
-        # Method 1: Place an order and return the order ID
-        orderid = smartApi.placeOrder(orderparams)
-        logger.info(f"PlaceOrder : {orderid}")
-        # Method 2: Place an order and return the full response
-        response = smartApi.placeOrderFullResponse(orderparams)
-        logger.info(f"PlaceOrder : {response}")
-    except Exception as e:
-        logger.exception(f"Order placement failed: {e}")
-
-    #gtt rule creation
-    try:
-        gttCreateParams={
-                "tradingsymbol" : "SBIN-EQ",
-                "symboltoken" : "3045",
-                "exchange" : "NSE", 
-                "producttype" : "MARGIN",
-                "transactiontype" : "BUY",
-                "price" : 100000,
-                "qty" : 10,
-                "disclosedqty": 10,
-                "triggerprice" : 200000,
-                "timeperiod" : 365
-            }
-        rule_id=smartApi.gttCreateRule(gttCreateParams)
-        logger.info(f"The GTT rule id is: {rule_id}")
-    except Exception as e:
-        logger.exception(f"GTT Rule creation failed: {e}")
-        
-    #gtt rule list
-    try:
-        status=["FORALL"] #should be a list
-        page=1
-        count=10
-        lists=smartApi.gttLists(status,page,count)
-    except Exception as e:
-        logger.exception(f"GTT Rule List failed: {e}")
-
-    #Historic api
-    try:
-        historicParam={
-        "exchange": "NSE",
-        "symboltoken": "3045",
-        "interval": "ONE_MINUTE",
-        "fromdate": "2021-02-08 09:00", 
-        "todate": "2021-02-08 09:16"
-        }
-        smartApi.getCandleData(historicParam)
-    except Exception as e:
-        logger.exception(f"Historic Api failed: {e}")
-    #logout
-    try:
-        logout=smartApi.terminateSession('Your Client Id')
-        logger.info("Logout Successfull")
-    except Exception as e:
-        logger.exception(f"Logout failed: {e}")
-
-    ```
-
-    ## Getting started with SmartAPI Websocket's
-    ####### Websocket V2 sample code #######
-
-    from SmartApi.smartWebSocketV2 import SmartWebSocketV2
-    from logzero import logger
-
-    AUTH_TOKEN = "authToken"
-    API_KEY = "api_key"
-    CLIENT_CODE = "client code"
-    FEED_TOKEN = "feedToken"
-    correlation_id = "abc123"
-    action = 1
-    mode = 1
-
-    token_list = [
-        {
-            "exchangeType": 1,
-            "tokens": ["26009"]
-        }
-    ]
-    token_list1 = [
-        {
-            "action": 0,
-            "exchangeType": 1,
-            "tokens": ["26009"]
-        }
-    ]
-
-    sws = SmartWebSocketV2(AUTH_TOKEN, API_KEY, CLIENT_CODE, FEED_TOKEN)
-
-    def on_data(wsapp, message):
-        logger.info("Ticks: {}".format(message))
-        # close_connection()
-
-    def on_open(wsapp):
-        logger.info("on open")
-        sws.subscribe(correlation_id, mode, token_list)
-        # sws.unsubscribe(correlation_id, mode, token_list1)
-
-
-    def on_error(wsapp, error):
-        logger.error(error)
-
-
-    def on_close(wsapp):
-        logger.info("Close")
-
-
-
-    def close_connection():
-        sws.close_connection()
-
-
-    # Assign the callbacks.
-    sws.on_open = on_open
-    sws.on_data = on_data
-    sws.on_error = on_error
-    sws.on_close = on_close
-
-    sws.connect()
-    ####### Websocket V2 sample code ENDS Here #######
-
-    ########################### SmartWebSocket OrderUpdate Sample Code Start Here ###########################
-    from SmartApi.smartWebSocketOrderUpdate import SmartWebSocketOrderUpdate
-    client = SmartWebSocketOrderUpdate(AUTH_TOKEN, API_KEY, CLIENT_CODE, FEED_TOKEN)
-    client.connect()
-    ########################### SmartWebSocket OrderUpdate Sample Code End Here ###########################
+```json
+{
+  "mcpServers": {
+    "angelone-mcp": {
+      "transport": "sse",
+      "url": "http://127.0.0.1:9000/mcp/",
+      "headers": {
+        "X-User-Id": "sample-user-123",
+        "X-Scopes": "portfolio:read,portfolio:trade"
+      }
+    }
+  }
+}
 ```
-##Change-log
-##1.4.5
-- Upgraded TLS Version
 
-##1.4.7
-- Added Error log file
+After adding this configuration:
+1. Restart Cursor
+2. Ensure the MCP server is running (`make run`)
+3. The Angel One tools should be available in your Cursor AI assistant
 
-##1.4.8
-- Intgrated EDIS, Brokerage Calculator, Option Greek, TopGainersLosers, PutRatio API
+## Available Tools
+
+### Portfolio Tools
+
+- **`get_portfolio_holdings`**: Retrieve current portfolio holdings
+- **`buy_delivery_trade`**: Place a delivery buy order (simple parameters)
+- **`mcp_angelone-mcp_buy_delivery_trade`**: Place a delivery buy order (structured parameters)
+
+### External Tools
+
+- **`scrape_stock_news_summaries`**: Aggregate stock news from multiple Indian financial news sources
+
+### System Tools
+
+- **`tool:health`**: Check server health and uptime
+
+## Authentication & Permissions
+
+The server uses header-based authentication with the following required headers:
+
+- `X-User-Id`: Unique identifier for the user
+- `X-Scopes`: Comma-separated list of permissions (e.g., `portfolio:read,portfolio:trade`)
+
+Available scopes:
+- `portfolio:read`: View portfolio holdings
+- `portfolio:trade`: Execute trades
+
+## Development
+
+### Code Quality
+
+```bash
+# Format and lint code
+make lint
+
+# Install pre-commit hooks
+make pre-commit-install
+
+# Run pre-commit checks
+make pre-commit-run
+```
+
+### Testing
+
+```bash
+# Run tests
+uv run pytest
+
+# Run specific test file
+uv run pytest test/test_portfolio_tools.py
+```
+
+### Clean Environment
+
+```bash
+# Remove virtual environment and caches
+make clean
+```
+
+## Security Notes
+
+- Never commit your `.env` file or API credentials to version control
+- Use environment-specific user IDs and scopes in production
+- The server requires valid Angel One credentials to function
+- All trading operations are logged for audit purposes
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Authentication Errors**: Verify your Angel One API credentials in the `.env` file
+2. **Connection Issues**: Ensure the server is running on the correct host/port
+3. **Import Errors**: Run `make setup` to ensure all dependencies are installed
+4. **Tool Errors**: Check that required headers (`X-User-Id`, `X-Scopes`) are properly set
+
+### Logs
+
+Server logs are written to the `logs/` directory, organized by date. Check these for detailed error information.
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting: `make lint && uv run pytest`
+5. Submit a pull request
+
+## Support
+
+For issues related to:
+- Angel One API: Check [Angel One Smart API documentation](https://smartapi.angelbroking.com/)
+- FastMCP: Check [FastMCP documentation](https://github.com/jlowin/fastmcp)
+- This server: Open an issue in this repository
