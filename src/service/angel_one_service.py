@@ -151,152 +151,14 @@ def _retrieve_order_status_from_smartapi(
     return order_status, order_status_details
 
 
-def buy_delivery_trade(secret, share_name: str, share_quantity_to_buy: float):
-    """Place a delivery (cash-and-carry) BUY market order for a given equity.
-
-    Args:
-        secret: UserSecret with Angel One credentials.
-        share_name: Human-friendly scrip query (e.g., "TCS" or "RELIANCE").
-        share_quantity_to_buy: Number of shares to buy (must be a whole number >= 1).
-
-    Returns:
-        The SmartAPI order placement response (full response dict).
-
-    Raises:
-        RuntimeError: On login failure, scrip lookup failure, or invalid quantity.
-    """
-    if SmartConnect is None:
-        raise RuntimeError("SmartApi not available: failed to import SmartConnect")
-
-    if not share_name or not str(share_name).strip():
-        raise RuntimeError("share_name must be a non-empty string")
-    try:
-        qty_float = float(share_quantity_to_buy)
-    except Exception:  # noqa: BLE001 - strict numeric validation
-        raise RuntimeError("share_quantity_to_buy must be a number")
-    if qty_float <= 0:
-        raise RuntimeError("share_quantity_to_buy must be >= 1")
-    if int(qty_float) != qty_float:
-        raise RuntimeError("share_quantity_to_buy must be a whole number of shares")
-    quantity = int(qty_float)
-
-    # 1) Ensure authenticated SmartConnect session
-    if not _session_valid():
-        smart = SmartConnect(api_key=secret.share_credentials.trading_api_key)
-        totp = pyotp.TOTP(secret.share_credentials.totp_secret).now()
-        data = smart.generateSession(
-            secret.share_credentials.client_code,
-            secret.share_credentials.pin,
-            totp,
-        )
-        if not data or not data.get("status"):
-            msg = data.get("message") if isinstance(data, dict) else str(data)
-            raise RuntimeError(f"login failed: {msg}")
-        _session["access_token"] = data["data"]["jwtToken"]
-        _session["login_time"] = dt.datetime.now(IST)
-    else:
-        smart = SmartConnect(
-            api_key=secret.share_credentials.trading_api_key,
-            access_token=_session["access_token"],
-        )
-
-    exchange = "NSE"
-
-    # 2) Find the tradingsymbol and token via searchScrip
-    search_resp = smart.searchScrip(exchange, share_name)
-    if isinstance(search_resp, dict) and (
-        search_resp.get("code") in (401, "AG8001")
-        or "Session" in str(search_resp.get("message", ""))
-    ):
-        _session["access_token"] = None
-        return buy_delivery_trade(secret, share_name, share_quantity_to_buy)
-    if not isinstance(search_resp, dict) or not search_resp.get("status"):
-        msg = (
-            search_resp.get("message")
-            if isinstance(search_resp, dict)
-            else "Unknown error"
-        )
-        raise RuntimeError(f"searchScrip() failed: {msg}")
-    results = search_resp.get("data") or []
-    if not results:
-        raise RuntimeError("No matching scrip found for the provided share_name")
-
-    # Prefer NSE equity symbols ending with -EQ
-    chosen = None
-    for item in results:
-        try:
-            if item.get("exchange") == exchange and str(
-                item.get("tradingsymbol", "")
-            ).endswith("-EQ"):
-                chosen = item
-                break
-        except Exception:  # noqa: BLE001 - defensive
-            continue
-    if chosen is None:
-        chosen = results[0]
-
-    tradingsymbol = chosen.get("tradingsymbol")
-    symboltoken = chosen.get("symboltoken")
-    if not tradingsymbol or not symboltoken:
-        raise RuntimeError("searchScrip() returned invalid symbol data")
-
-    # 3) We directly place order with the requested quantity (no LTP-based sizing)
-
-    # 4) Place a MARKET order with producttype DELIVERY (CNC)
-    orderparams = {
-        "variety": "NORMAL",
-        "tradingsymbol": tradingsymbol,
-        "symboltoken": str(symboltoken),
-        "transactiontype": "BUY",
-        "exchange": exchange,
-        "ordertype": "MARKET",
-        "producttype": "DELIVERY",
-        "duration": "DAY",
-        "price": None,  # MARKET order
-        "squareoff": "0",
-        "stoploss": "0",
-        "quantity": str(quantity),
-    }
-
-    order_resp = smart.placeOrderFullResponse(orderparams)
-    if isinstance(order_resp, dict) and (
-        order_resp.get("code") in (401, "AG8001")
-        or "Session" in str(order_resp.get("message", ""))
-    ):
-        _session["access_token"] = None
-        return buy_delivery_trade(secret, share_name, share_quantity_to_buy)
-
-    if order_resp.get("status") is False or order_resp.get("error") is not None:
-        raise RuntimeError(f"buy_delivery_trade failed: {order_resp.get('message')}")
-
-    logger.info(f"order_resp: {order_resp}")
-
-    # Fetch order status using a helper (tries individual order details,
-    # then order book)
-    try:
-        order_status, order_status_details = _retrieve_order_status_from_smartapi(
-            smart, order_resp
-        )
-    except Exception as exc:  # noqa: BLE001 - don't fail the primary order call
-        logger.error(f"Error while fetching order status: {exc}")
-        order_status, order_status_details = None, None
-
-    final_order_resp = {
-        "order_id": (order_resp.get("data") or {}).get("orderid"),
-        "order_status": order_status,
-        "order_status_details": order_status_details,
-    }
-
-    # Return the original placement response enhanced with order status details
-    return final_order_resp
-
-
 def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
-    """Place a DELIVERY (CNC) BUY order using explicit order parameters.
+    """
+    Place a DELIVERY (CNC) BUY order using explicit order parameters.
 
     If `symboltoken` is not provided, it will be resolved via searchScrip
     using the provided `tradingsymbol` and `exchange`.
     """
+    logger.info(f"buy_delivery_trade_with_order_params: {order}")
     if SmartConnect is None:
         raise RuntimeError("SmartApi not available: failed to import SmartConnect")
 
@@ -325,11 +187,9 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
             access_token=_session["access_token"],
         )
 
-    # 2) Resolve symboltoken when not provided
-    symboltoken = order.symboltoken
-    exchange = order.exchange
-    if not symboltoken:
-        search_resp = smart.searchScrip(exchange, order.tradingsymbol)
+    # 2) if symboltoken is none then it means we will default to EQ
+    if not order.symboltoken:
+        search_resp = smart.searchScrip(order.exchange, order.tradingsymbol)
         if isinstance(search_resp, dict) and (
             search_resp.get("code") in (401, "AG8001")
             or "Session" in str(search_resp.get("message", ""))
@@ -353,10 +213,9 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
         chosen = None
         for item in results:
             try:
-                if (
-                    item.get("exchange") == exchange
-                    and str(item.get("tradingsymbol", "")) == order.tradingsymbol
-                ):
+                if item.get("exchange") == order.exchange and str(
+                    item.get("tradingsymbol", "")
+                ).endswith("-EQ"):
                     chosen = item
                     break
             except Exception:
@@ -373,7 +232,7 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
         "tradingsymbol": order.tradingsymbol,
         "symboltoken": str(symboltoken),
         "transactiontype": order.transactiontype,
-        "exchange": exchange,
+        "exchange": order.exchange,
         "ordertype": order.ordertype,
         "producttype": order.producttype,
         "duration": order.duration,

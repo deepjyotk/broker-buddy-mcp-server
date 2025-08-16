@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  broker-buddy-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: broker-buddy-mcp-server
+    ports:
+      - "9000:9000"
+    environment:
+      # FastMCP Configuration
+      - FASTMCP_HOST=0.0.0.0
+      - FASTMCP_PORT=9000
+      - FASTMCP_PATH=/mcp/
+      
+      # Angel One API Configuration (set these in .env file or override here)
+      # - ANGEL_ONE_API_KEY=${ANGEL_ONE_API_KEY}
+      # - ANGEL_ONE_CLIENT_CODE=${ANGEL_ONE_CLIENT_CODE}
+      # - ANGEL_ONE_PASSWORD=${ANGEL_ONE_PASSWORD}
+      # - ANGEL_ONE_TOTP_TOKEN=${ANGEL_ONE_TOTP_TOKEN}
+      
+    volumes:
+      # Mount logs directory for persistence
+      - ./logs:/app/logs
+      # Mount .env file for secrets (optional - you can also use environment variables)
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - broker-buddy-mcp-network
+
+networks:
+  broker-buddy-mcp-network:
+    driver: bridge

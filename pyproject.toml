@@ -3,7 +3,7 @@ requires = ["hatchling>=1.21.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "angelone-mcp"
+name = "broker-buddy-mcp"
 version = "0.1.0"
 description = "FastMCP server exposing Angel One Smart API tools"
 readme = "README.md"
@@ -51,7 +51,7 @@ dependencies = [
 Homepage = "https://example.com"
 
 [project.scripts]
-angelone-mcp = "angelone_mcp.server:main"
+broker-buddy-mcp = "angelone_mcp.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/angelone_mcp"]
@@ -64,6 +64,7 @@ dev = [
     "isort>=6.0.1",
     "pre-commit>=4.3.0",
     "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
 ]
 
 

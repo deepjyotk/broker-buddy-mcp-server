@@ -70,7 +70,7 @@ class CustomMiddleware(Middleware):
 
 
 def build_mcp(start_time: float) -> FastMCP:
-    mcp = FastMCP(name="angelone-mcp")
+    mcp = FastMCP(name="broker-buddy-mcp")
 
     # Add middleware (instance, not class)
     mcp.add_middleware(CustomMiddleware())
@@ -85,7 +85,7 @@ def build_mcp(start_time: float) -> FastMCP:
     @mcp.tool(name="tool:health", description="Service health and uptime")
     def health() -> dict[str, float | str]:
         return {
-            "service": "angelone-mcp",
+            "service": "broker-buddy-mcp",
             "uptime_seconds": round(time.time() - start_time, 3),
         }
 

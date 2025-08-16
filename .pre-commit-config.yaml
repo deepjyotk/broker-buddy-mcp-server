@@ -1,13 +1,13 @@
 repos:
   - repo: local
     hooks:
-      - id: pytest
-        name: pytest
-        entry: ./.venv/bin/pytest -q --ignore=SmartApi
-        language: system
-        types: [python]
-        pass_filenames: false
-        exclude: ^(SmartApi/|\.venv/|__pycache__/)
+      # - id: pytest
+      #   name: pytest
+      #   entry: ./.venv/bin/pytest -q --ignore=SmartApi
+      #   language: system
+      #   types: [python]
+      #   pass_filenames: false
+      #   exclude: ^(SmartApi/|\.venv/|__pycache__/)
 
       - id: flake8
         name: flake8

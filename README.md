@@ -53,7 +53,7 @@ FASTMCP_PATH=/mcp/
 make run
 
 # Or directly with uv
-uv run angelone-mcp
+uv run broker-buddy-mcp
 ```
 
 The server will start on `http://127.0.0.1:9000/mcp/` by default.
@@ -67,7 +67,7 @@ To quickly test the MCP server in Cursor, create or update your `mcp.json` confi
 ```json
 {
   "mcpServers": {
-    "angelone-mcp": {
+    "broker-buddy-mcp": {
       "transport": "sse",
       "url": "http://127.0.0.1:9000/mcp/",
       "headers": {
@@ -90,7 +90,7 @@ After adding this configuration:
 
 - **`get_portfolio_holdings`**: Retrieve current portfolio holdings
 - **`buy_delivery_trade`**: Place a delivery buy order (simple parameters)
-- **`mcp_angelone-mcp_buy_delivery_trade`**: Place a delivery buy order (structured parameters)
+- **`mcp_broker-buddy-mcp_buy_delivery_trade`**: Place a delivery buy order (structured parameters)
 
 ### External Tools
 
