@@ -73,4 +73,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${FASTMCP_PORT:-9000}${FASTMCP_PATH:-/mcp/}health || exit 1
 
 # Run the application
-CMD ["python", "-m", "angelone_mcp.server"]
+CMD ["python", "-m", "mcp_src.server"]

@@ -16,7 +16,7 @@
     {
       "label": "run: server",
       "type": "shell",
-      "command": "uv run python ${workspaceFolder}/src/angelone_mcp/server.py",
+      "command": "uv run python ${workspaceFolder}/src/mcp_src/server.py",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {

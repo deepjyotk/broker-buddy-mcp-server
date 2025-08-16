@@ -51,10 +51,10 @@ dependencies = [
 Homepage = "https://example.com"
 
 [project.scripts]
-broker-buddy-mcp = "angelone_mcp.server:main"
+broker-buddy-mcp = "mcp_src.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/angelone_mcp"]
+packages = ["src/mcp_src"]
 
 [dependency-groups]
 dev = [

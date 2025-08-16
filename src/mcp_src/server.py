@@ -75,8 +75,8 @@ def build_mcp(start_time: float) -> FastMCP:
     # Add middleware (instance, not class)
     mcp.add_middleware(CustomMiddleware())
 
-    from angelone_mcp.tools.external_tools import register_external_tools
-    from angelone_mcp.tools.portfolio_tools import register_portfolio_tools
+    from mcp_src.tools.external_tools import register_external_tools
+    from mcp_src.tools.portfolio_tools import register_portfolio_tools
 
     register_portfolio_tools(mcp)
     register_external_tools(mcp)
