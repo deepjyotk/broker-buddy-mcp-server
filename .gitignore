@@ -9,3 +9,4 @@ dist/*
 kitchen-sink/
 *.pyc
 *.log
+developer-README.md

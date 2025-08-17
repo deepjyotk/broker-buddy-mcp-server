@@ -45,6 +45,7 @@ dependencies = [
   "fastmcp",
   "python-dotenv",
   "fastapi>=0.116.1",
+  "coinbase-advanced-py>=1.8.2",
 ]
 
 [project.urls]

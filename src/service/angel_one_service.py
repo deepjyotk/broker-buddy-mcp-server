@@ -4,9 +4,9 @@ import time
 from zoneinfo import ZoneInfo
 
 import pyotp
-
-from dtos.order_params_dto import BuyDeliveryOrderParams
 from SmartApi.smartConnect import SmartConnect
+
+from dtos.order_params_dto import DeliveryTradeParams, OrderType
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -46,7 +46,8 @@ def get_holdings(secret):
         if not data or not data.get("status"):
             msg = data.get("message") if isinstance(data, dict) else str(data)
             raise RuntimeError(f"login failed: {msg}")
-        _session["access_token"] = data["data"]["jwtToken"]
+
+        _session["access_token"] = smart.access_token
         _session["login_time"] = dt.datetime.now(IST)
     else:
         smart = SmartConnect(
@@ -151,14 +152,14 @@ def _retrieve_order_status_from_smartapi(
     return order_status, order_status_details
 
 
-def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
+def execute_delivery_trade(secret, order: DeliveryTradeParams):
     """
     Place a DELIVERY (CNC) BUY order using explicit order parameters.
 
     If `symboltoken` is not provided, it will be resolved via searchScrip
     using the provided `tradingsymbol` and `exchange`.
     """
-    logger.info(f"buy_delivery_trade_with_order_params: {order}")
+    logger.info(f"execute_delivery_trade: {order}")
     if SmartConnect is None:
         raise RuntimeError("SmartApi not available: failed to import SmartConnect")
 
@@ -166,6 +167,8 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
         raise RuntimeError("tradingsymbol must be a non-empty string")
     if order.quantity is None or int(order.quantity) < 1:
         raise RuntimeError("quantity must be a whole number >= 1")
+    if not order.transactiontype:
+        raise RuntimeError("transactiontype must be provided")
 
     # 1) Ensure authenticated SmartConnect session
     if not _session_valid():
@@ -179,7 +182,8 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
         if not data or not data.get("status"):
             msg = data.get("message") if isinstance(data, dict) else str(data)
             raise RuntimeError(f"login failed: {msg}")
-        _session["access_token"] = data["data"]["jwtToken"]
+        # Persist raw JWT from the active SmartConnect instance
+        _session["access_token"] = smart.access_token
         _session["login_time"] = dt.datetime.now(IST)
     else:
         smart = SmartConnect(
@@ -188,14 +192,15 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
         )
 
     # 2) if symboltoken is none then it means we will default to EQ
+    symboltoken = order.symboltoken
     if not order.symboltoken:
-        search_resp = smart.searchScrip(order.exchange, order.tradingsymbol)
+        search_resp = smart.searchScrip(order.exchange.value, order.tradingsymbol)
         if isinstance(search_resp, dict) and (
             search_resp.get("code") in (401, "AG8001")
             or "Session" in str(search_resp.get("message", ""))
         ):
             _session["access_token"] = None
-            return buy_delivery_trade_with_order_params(secret, order)
+            return execute_delivery_trade(secret, order)
         if not isinstance(search_resp, dict) or not search_resp.get("status"):
             msg = (
                 search_resp.get("message")
@@ -213,7 +218,7 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
         chosen = None
         for item in results:
             try:
-                if item.get("exchange") == order.exchange and str(
+                if item.get("exchange") == order.exchange.value and str(
                     item.get("tradingsymbol", "")
                 ).endswith("-EQ"):
                     chosen = item
@@ -228,15 +233,17 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
 
     # 3) Build order params
     orderparams = {
-        "variety": order.variety,
+        "variety": order.variety.value,
         "tradingsymbol": order.tradingsymbol,
         "symboltoken": str(symboltoken),
-        "transactiontype": order.transactiontype,
-        "exchange": order.exchange,
-        "ordertype": order.ordertype,
-        "producttype": order.producttype,
-        "duration": order.duration,
-        "price": None if order.ordertype == "MARKET" else order.price,
+        "transactiontype": order.transactiontype.value,
+        "exchange": order.exchange.value,
+        "ordertype": order.ordertype.value,
+        "producttype": order.producttype.value,
+        "duration": order.duration.value,
+        "price": (
+            None if order.ordertype.value == OrderType.MARKET.value else order.price
+        ),
         "squareoff": order.squareoff,
         "stoploss": order.stoploss,
         "quantity": str(int(order.quantity)),
@@ -248,7 +255,7 @@ def buy_delivery_trade_with_order_params(secret, order: BuyDeliveryOrderParams):
         or "Session" in str(order_resp.get("message", ""))
     ):
         _session["access_token"] = None
-        return buy_delivery_trade_with_order_params(secret, order)
+        return execute_delivery_trade(secret, order)
 
     if order_resp.get("status") is False or order_resp.get("error") is not None:
         raise RuntimeError(f"buy_delivery_trade failed: {order_resp.get('message')}")

@@ -7,6 +7,8 @@ from urllib.parse import quote_plus
 import requests
 from fastmcp import FastMCP
 
+from utils.const import MCPToolsTags
+
 # JSON-like return type without recursive self-references (pydantic-friendly)
 JSONValue = Union[None, bool, int, float, str, List[Any], Dict[str, Any]]
 NewsItems = List[Dict[str, str]]
@@ -111,6 +113,7 @@ def register_external_tools(mcp: FastMCP) -> None:
             "economic_times_markets, business_standard_markets. "
             "Returns a dict mapping provider->content string."
         ),
+        tags=[MCPToolsTags.INDIAN_EXCHANGE.value],
     )
     def scrape_stock_news_summaries(keywords: List[str]) -> JSONValue:
         """Fetch news from multiple providers for the given keywords.

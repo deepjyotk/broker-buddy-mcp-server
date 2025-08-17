@@ -1,19 +1,59 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
-class BuyDeliveryOrderParams(BaseModel):
+class TransactionType(Enum):
+    BUY = "BUY"
+    SELL = "SELL"
+
+
+class Variety(Enum):
+    NORMAL = "NORMAL"
+    STOPLOSS = "STOPLOSS"
+    AMO = "AMO"
+    ROBO = "ROBO"
+
+
+class Exchange(Enum):
+    NSE = "NSE"
+    BSE = "BSE"
+    NFO = "NFO"
+    MCX = "MCX"
+
+
+class OrderType(Enum):
+    MARKET = "MARKET"
+    LIMIT = "LIMIT"
+    STOPLOSS_LIMIT = "STOPLOSS_LIMIT"
+    STOPLOSS_MARKET = "STOPLOSS_MARKET"
+
+
+class ProductType(Enum):
+    DELIVERY = "DELIVERY"
+    INTRADAY = "INTRADAY"
+    MARGIN = "MARGIN"
+    CARRYFORWARD = "CARRYFORWARD"
+    BO = "BO"  # Bracket Order
+
+
+class Duration(Enum):
+    DAY = "DAY"
+    IOC = "IOC"  # Immediate or Cancel
+
+
+class DeliveryTradeParams(BaseModel):
     """Parameters for placing a DELIVERY (CNC) MARKET BUY order.
 
-    Required fields: `tradingsymbol`, `quantity`.
+    Required fields: `tradingsymbol`, `quantity`, `transactiontype`
     All other fields have sensible defaults aligned with a CNC market BUY.
     """
 
-    variety: str = Field(
-        default="NORMAL",
+    variety: Variety = Field(
+        default=Variety.NORMAL,
         description="Order variety; typically 'NORMAL' for standard orders.",
     )
     tradingsymbol: str = Field(
@@ -26,24 +66,23 @@ class BuyDeliveryOrderParams(BaseModel):
             " using the provided tradingsymbol and exchange."
         ),
     )
-    transactiontype: str = Field(
-        default="BUY",
+    transactiontype: TransactionType = Field(
         description="Transaction side; for this tool the default is 'BUY'.",
     )
-    exchange: str = Field(
-        default="NSE",
+    exchange: Exchange = Field(
+        default=Exchange.NSE,
         description="Exchange on which to place the order (e.g., NSE, BSE).",
     )
-    ordertype: str = Field(
-        default="MARKET",
+    ordertype: OrderType = Field(
+        default=OrderType.MARKET,
         description="Order type; 'MARKET' implies price is ignored/None.",
     )
-    producttype: str = Field(
-        default="DELIVERY",
+    producttype: ProductType = Field(
+        default=ProductType.DELIVERY,
         description="Product type; 'DELIVERY' (CNC) for cash-and-carry.",
     )
-    duration: str = Field(
-        default="DAY",
+    duration: Duration = Field(
+        default=Duration.DAY,
         description="Order validity duration (e.g., DAY).",
     )
     price: Optional[float] = Field(

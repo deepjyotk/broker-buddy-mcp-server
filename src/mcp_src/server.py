@@ -68,6 +68,20 @@ class CustomMiddleware(Middleware):
             logger.error(f"Error: {e}")
             raise e
 
+    async def on_list_tools(self, context: MiddlewareContext, call_next):
+        result = await call_next(context)
+
+        excude_tags_str = os.getenv("EXCLUDE_TOOLS_TAGS")
+        exclude_tags = excude_tags_str.split(",")
+
+        # Filter out tools with "private" tag
+        filtered_tools = [
+            tool for tool in result if not any(tag in tool.tags for tag in exclude_tags)
+        ]
+
+        # Return modified list
+        return filtered_tools
+
 
 def build_mcp(start_time: float) -> FastMCP:
     mcp = FastMCP(name="broker-buddy-mcp")
@@ -75,10 +89,12 @@ def build_mcp(start_time: float) -> FastMCP:
     # Add middleware (instance, not class)
     mcp.add_middleware(CustomMiddleware())
 
+    from mcp_src.tools.angel_one_tools import register_angel_one_tools
+    from mcp_src.tools.coinbase_tools import register_coinbase_tools
     from mcp_src.tools.external_tools import register_external_tools
-    from mcp_src.tools.portfolio_tools import register_portfolio_tools
 
-    register_portfolio_tools(mcp)
+    register_angel_one_tools(mcp)
+    register_coinbase_tools(mcp)
     register_external_tools(mcp)
 
     # Simple healthcheck tool
