@@ -71,6 +71,40 @@ def register_coinbase_tools(mcp: FastMCP) -> None:
         auth_headers = ctx.get_state("auth_headers")
         secret = get_coinbase_secrets(auth_headers.user_id, auth_headers.scopes)
 
+        if order.side == "SELL":
+            if (
+                order.order_configuration.market_market_ioc is None
+                or order.order_configuration.market_market_ioc.base_size is None
+                or order.order_configuration.market_market_ioc.base_size == 0
+            ):
+
+                portfolio = get_crypto_portfolio(secret)
+
+                available_value = 0
+                for i in range(len(portfolio["holdings"])):
+                    if (
+                        portfolio["holdings"][i]["currency"]
+                        == order.product_id.split("-")[0]
+                    ):
+                        available_value = portfolio["holdings"][i]["available_value"]
+                        break
+
+                prompt = f"""Current you have
+                {available_value} in {order.product_id}. Please
+                provide the base size for the sell order.
+                (Note: Base size is the amount of the base
+                currency you want to sell. For example, if
+                you want to sell 5 USDC, you need to provide 5)
+                """
+                # ctx.sample
+                result = await ctx.elicit(message=prompt, response_type=float)
+
+                if result.action == "accept":
+                    order.order_configuration.market_market_ioc.base_size = result.data
+                    order.order_configuration.market_market_ioc.quote_size = None
+                else:
+                    return "User rejected the request"
+
         products = svc_get_crypto_products(secret)
 
         if order.product_id not in products:

@@ -63,7 +63,9 @@ def __list_all_accounts(client: RESTClient, limit: int = 250) -> List[Dict[str, 
     return accounts_accum
 
 
-def build_portfolio_summary(raw_accounts: List[Dict[str, Any]]) -> Dict[str, Any]:
+def build_portfolio_summary(
+    raw_accounts: List[Dict[str, Any]], product_id: Optional[str] = None
+) -> Dict[str, Any]:
     """Transform Coinbase `accounts` into a concise portfolio summary.
 
     Filters out entries where both available and hold balances are truly zero
@@ -72,6 +74,7 @@ def build_portfolio_summary(raw_accounts: List[Dict[str, Any]]) -> Dict[str, Any
     holdings: List[Dict[str, Any]] = []
 
     for acc in raw_accounts:
+
         uuid = acc.get("uuid", "")
         name = acc.get("name", "")
         currency = acc.get("currency", "")
@@ -118,7 +121,9 @@ def build_portfolio_summary(raw_accounts: List[Dict[str, Any]]) -> Dict[str, Any
     return result
 
 
-def get_crypto_portfolio(secret: Any) -> Dict[str, Any]:
+def get_crypto_portfolio(
+    secret: Any, product_id: Optional[str] = None
+) -> Dict[str, Any]:
     """Return the authenticated user's Coinbase portfolio summary.
 
     This is a thin wrapper combining client creation, account pagination, and
@@ -126,7 +131,7 @@ def get_crypto_portfolio(secret: Any) -> Dict[str, Any]:
     """
     client = _create_rest_client(secret)
     accounts = __list_all_accounts(client)
-    return build_portfolio_summary(accounts)
+    return build_portfolio_summary(accounts, product_id)
 
 
 def __list_all_products(
