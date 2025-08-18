@@ -98,7 +98,7 @@ def build_mcp(start_time: float) -> FastMCP:
     register_external_tools(mcp)
 
     # Simple healthcheck tool
-    @mcp.tool(name="tool:health", description="Service health and uptime")
+    @mcp.tool(name="tool_health", description="Service health and uptime")
     def health() -> dict[str, float | str]:
         return {
             "service": "broker-buddy-mcp",

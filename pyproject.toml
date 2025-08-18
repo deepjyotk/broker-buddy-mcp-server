@@ -71,4 +71,4 @@ dev = [
 
 [tool.isort]
 profile = "black"
-skip = ["SmartApi"]
+skip = ["SmartApi", ".venv"]
